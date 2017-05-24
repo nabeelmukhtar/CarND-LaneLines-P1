@@ -1,53 +1,177 @@
-#**Finding Lane Lines on the Road** 
-[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+# Self-Driving Car Engineer Nanodegree
 
-<img src="examples/laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
+## Project: **Finding Lane Lines on the Road** 
+***
+The goals / steps of this project are the following:
+* Make a pipeline that finds lane lines on the road
+* Reflect on your work in a written report
 
-Overview
+---
+Let's have a look at our first image called 'test_images/solidWhiteRight.jpg'.
+
+The tools we have are color selection, region of interest selection, grayscaling, Gaussian smoothing, Canny Edge Detection and Hough Tranform line detection.  The goal is piece together a pipeline to detect the line segments in the image, then average/extrapolate them and draw them onto the image for display (as below).
+
 ---
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+<figure>
+ <img src="examples/line-segments-example.jpg" width="380" alt="Combined Image" />
+ <figcaption>
+ <p></p> 
+ <p style="text-align: center;"> Your output should look something like this (above) after detecting line segments using the helper functions below </p> 
+ </figcaption>
+</figure>
+ <p></p> 
+<figure>
+ <img src="examples/laneLines_thirdPass.jpg" width="380" alt="Combined Image" />
+ <figcaption>
+ <p></p> 
+ <p style="text-align: center;"> Your goal is to connect/average/extrapolate line segments to get output like this</p> 
+ </figcaption>
+</figure>
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
-
-To complete the project, two files will be submitted: a file containing project code and a file containing a brief write up explaining your solution. We have included template files to be used both for the [code](https://github.com/udacity/CarND-LaneLines-P1/blob/master/P1.ipynb) and the [writeup](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md).The code file is called P1.ipynb and the writeup template is writeup_template.md 
-
-To meet specifications in the project, take a look at the requirements in the [project rubric](https://review.udacity.com/#!/rubrics/322/view)
-
-
-Creating a Great Writeup
----
-For this project, a great writeup should provide a detailed response to the "Reflection" section of the [project rubric](https://review.udacity.com/#!/rubrics/322/view). There are three parts to the reflection:
-
-1. Describe the pipeline
-
-2. Identify any shortcomings
-
-3. Suggest possible improvements
-
-We encourage using images in your writeup to demonstrate how your pipeline works.  
-
-All that said, please be concise!  We're not looking for you to write a book here: just a brief description.
-
-You're not required to use markdown for your writeup.  If you use another method please just submit a pdf of your writeup. Here is a link to a [writeup template file](https://github.com/udacity/CarND-LaneLines-P1/blob/master/writeup_template.md). 
+## Initial Setup
+Thankfully most of the code and techniques were well described in the lesson. I did not get any problem in detecting the lane lines. Here is the initial code to import libraries and the helper functions.
 
 
-The Project
----
+```python
+#importing some useful packages
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+import cv2
+import math
+%matplotlib inline
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you should install the starter kit to get started on this project. ##
+#reading in an image
+image = mpimg.imread('test_images/solidWhiteRight.jpg')
 
-**Step 1:** Set up the [CarND Term1 Starter Kit](https://classroom.udacity.com/nanodegrees/nd013/parts/fbf77062-5703-404e-b60c-95b78b2f3f9e/modules/83ec35ee-1e02-48a5-bdb7-d244bd47c2dc/lessons/8c82408b-a217-4d09-b81d-1bda4c6380ef/concepts/4f1870e0-3849-43e4-b670-12e6f2d4b7a7) if you haven't already.
+#printing out some stats and plotting
+print('This image is:', type(image), 'with dimensions:', image.shape)
+plt.imshow(image)  # if you wanted to show a single color channel image called 'gray', for example, call as plt.imshow(gray, cmap='gray')
+```
 
-**Step 2:** Open the code in a Jupyter Notebook
 
-You will complete the project code in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
+![png](writeup_images/output_3_2.png)
 
-Jupyter is an Ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, use terminal to navigate to your project directory and then run the following command at the terminal prompt (be sure you've activated your Python 3 carnd-term1 environment as described in the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) installation instructions!):
 
-`> jupyter notebook`
+## Reflection
+### Describe your pipeline. As part of the description, explain how you modified the draw_lines() function.
 
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+The lane detection pipeline followed the steps mentioned in the lesson:
+* First the image was converted to grayscale. Although by doing so we lost the color information that was very useful from differentiating lane lines from other lines of arbitrary color, it was not a problem for the images/videos of this project. For converting to grayscale I used the exact same function provided in the lesson which uses cv2.cvtColor() function.
 
-**Step 3:** Complete the project and submit both the Ipython notebook and the project writeup
 
+![png](writeup_images/output_6_1.png)
+
+
+* The next step was to apply gaussian smoothing to the image. The code was provided in the lesson. I used a kernel size of 5.
+
+
+![png](writeup_images/output_8_1.png)
+
+
+* The I used the canny edge detection algorithm to detect edges. I used a low threshold of 50 and a high threshold of 150. The two values were derived by experimentation with different values.
+
+
+![png](writeup_images/output_10_1.png)
+
+
+* The next step was to select a region of interest. I selected a trapezoidal region of interest with fixed vertices. Since the vertices are hardcoded, they will not fit for images/videos other than the ones provided in the project.
+
+
+```python
+vertices = np.array([[[720, 324], [240, 324], [40, 540], [920, 540]]], dtype=np.int32 )
+img_region = region_of_interest(edges, vertices)
+plt.imshow(img_region)
+```
+
+![png](writeup_images/output_12_1.png)
+
+
+* The fifth step was to run hough trnasform on the edge detected image and draw the lines. First I used the draw_lines() function provided in the notebook. I used the min_line_length of 20 and max_line_gap of 100 to identify large lines.
+
+
+![png](writeup_images/output_14_1.png)
+
+
+* The final and the most involved step was to modify the draw_lines function provided in the lesson to interpolate. Here are the steps I followed to interpolate lines to full lane line length.
+  1. First I calculated the slope of the line: slope = ((y2 - y1) / (x2 - x1))
+  2. Then I calculated the size of the line:
+  3. Then I checked if the slope is less than -0.5 its a left line, otherwise a right line.
+  4. I iterated through all the detected lines and selected the largest left and right lines as the ones to interpolate.
+  5. Last I calculated the slope and intercept of the selected left and right lines and drew lines with the same slope and intercept to the full length of the image.
+
+
+
+```python
+def draw_lines(img, lines, color=[255, 0, 0], thickness=2):
+    """
+    NOTE: this is the function you might want to use as a starting point once you want to 
+    average/extrapolate the line segments you detect to map out the full
+    extent of the lane (going from the result shown in raw-lines-example.mp4
+    to that shown in P1_example.mp4).  
+    
+    Think about things like separating line segments by their 
+    slope ((y2-y1)/(x2-x1)) to decide which segments are part of the left
+    line vs. the right line.  Then, you can average the position of each of 
+    the lines and extrapolate to the top and bottom of the lane.
+    
+    This function draws `lines` with `color` and `thickness`.    
+    Lines are drawn on the image inplace (mutates the image).
+    If you want to make the lines semi-transparent, think about combining
+    this function with the weighted_img() function below
+    """
+    bestleftsize = 0
+    bestrightsize = 0
+    bestleftlane = (0, 0, 0, 0)
+    bestrightlane = (0, 0, 0, 0)
+    ymin = 320
+    ymax = 540
+    for line in lines:
+        for x1,y1,x2,y2 in line:
+            if x1 != x2 and y1 != y2:
+                slope = ((y2 - y1) / (x2 - x1))
+                size = math.hypot(x2 - x1, y2 - y1)
+                if slope < -0.5:
+                    if size > bestleftsize:
+                        bestleftlane = (x1, y1, x2, y2)
+                        bestleftsize = size
+                elif slope > 0.5:
+                    if size > bestrightsize:
+                        bestrightlane = (x1, y1, x2, y2)
+                        bestrightsize = size
+    if bestleftsize > 0:
+        leftslope = ((bestleftlane[3] - bestleftlane[1]) / (bestleftlane[2] - bestleftlane[0]))
+        leftintercept = bestleftlane[1] - leftslope * bestleftlane[0]
+        leftx1 = int((ymin -leftintercept) / leftslope)
+        leftx2 = int((ymax -leftintercept) / leftslope)
+        cv2.line(img, (leftx1, ymin), (leftx2, ymax), color, thickness)
+
+    if bestrightsize > 0:
+        rightslope = ((bestrightlane[3] - bestrightlane[1]) / (bestrightlane[2] - bestrightlane[0]))
+        rightintercept = bestrightlane[1] - rightslope * bestrightlane[0]
+        rightx1 = int((ymin -rightintercept) / rightslope)
+        rightx2 = int((ymax -rightintercept) / rightslope)
+        cv2.line(img, (rightx1, ymin), (rightx2, ymax), color, thickness)
+
+line_image = hough_lines(img_region, rho, theta, threshold,
+                            min_line_length, max_line_gap)
+
+plt.imshow(line_image)
+```
+
+![png](writeup_images/output_16_1.png)
+
+
+### Identify potential shortcomings with your current pipeline
+My pipeline has following limitations:
+* The draw_lines method is a bit shaky and is bound to fail in sudden changes in the direction.
+* Since I am converting the image to grayscale, a lot of color information is lost which may be useful in lanes of different color.
+* For selecting a trapezoidal regions of interest I am using fixed set of vertices which will not be applicable to any images other than those provided with this project.
+
+###  Suggest possible improvements to your pipeline
+The pipeline can be improved in the following ways:
+* I would like utilize the color channel of the image as well to identify lane lines.
+* Adding contrast to the image will also help to distinguish lane lines.
+* The draw_lines function can be further improved: possibly by selecting multiple left and right lines and then averaging their slope.
+* The selecting region of interest, we can use the image shape to deduce vertices instead of hard coding them. But I dd not know a generic way to do it.
